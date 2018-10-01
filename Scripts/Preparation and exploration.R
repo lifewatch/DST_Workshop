@@ -79,3 +79,4 @@ p <- plot_ly(dst, x = ~Time, y = ~Depth, color = ~ID) %>% # select parts of the 
     yaxis = list(
       title = "Depth"))
 p
+
