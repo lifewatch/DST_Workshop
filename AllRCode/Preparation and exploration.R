@@ -44,7 +44,6 @@ mylist <- list(R1358 = R1358, # make a list of all files
 dst <- ldply(mylist) # ldply converts a list (l) into a dataframe (d)
 colnames(dst) <- c("ID", "Time", "Pressure")
 
-
 # Add a depth variable
 
 dst <- filter(dst, !is.na(Pressure)) # remove NA values
@@ -79,7 +78,7 @@ lapply(sort(unique(date(dst$Time))), function(z){ # explore movements of all ani
 
 #### Interactive plotting ####
 p <- plot_ly(dst, x = ~Time, y = ~Depth, color = ~ID) %>% # select parts of the plot manually
-  add_trace()
+  add_lines()
 p
 
 p <- plot_ly(dst, x = ~Time, y = ~Depth, color = ~ID) %>% # select parts of the plot in the slider
