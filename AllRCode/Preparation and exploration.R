@@ -2,18 +2,35 @@
 #######      Exploration      #######
 #####################################
 
+
+#### Load needed libraries ####
+library(lubridate)
+library(plyr)
+library(dplyr) 
+library(ggplot2)
+library(plotly)
+
+# If a package is not recognized you'll first have to install the package.See example below
+install.packages("plotly")
+
 #### Data preparation ####
 # Load data
-R1358 <- read.csv("DST data useful/R1358.csv", stringsAsFactors=FALSE)
-R1635 <- read.csv("DST data useful/R1635.csv", stringsAsFactors=FALSE)
-R1642 <- read.csv("DST data useful/R1642.csv", stringsAsFactors=FALSE)
-R2071 <- read.csv("DST data useful/R2071.csv", stringsAsFactors=FALSE)
-R2291 <- read.csv("DST data useful/R2291.csv", stringsAsFactors=FALSE)
-R2296 <- read.csv("DST data useful/R2296.csv", stringsAsFactors=FALSE)
-R2342 <- read.csv("DST data useful/R2342.csv", stringsAsFactors=FALSE)
+R1358 <- read.csv("AllData/R1358.csv", stringsAsFactors=FALSE)
+R1635 <- read.csv("AllData/R1635.csv", stringsAsFactors=FALSE)
+R1642 <- read.csv("AllData/R1642.csv", stringsAsFactors=FALSE)
+R2071 <- read.csv("AllData/R2071.csv", stringsAsFactors=FALSE)
+R2291 <- read.csv("AllData/R2291.csv", stringsAsFactors=FALSE)
+R2296 <- read.csv("AllData/R2296.csv", stringsAsFactors=FALSE)
+R2342 <- read.csv("AllData/R2342.csv", stringsAsFactors=FALSE)
 
 # Join data in one dataframe
-R1358$Time <- as.character(parse_date_time(R1358$Time, orders = "mdyHM")) # date is written differently in this file
+R1358$Time <- parse_date_time(R1358$Time, orders = "mdyHM") # date is written differently in this file
+R1635$Time <- parse_date_time(R1635$Time, orders = "dmyHM")
+R1642$Time <- parse_date_time(R1642$Time, orders = "dmyHM")
+R2071$Time <- parse_date_time(R2071$Time, orders = "dmyHM")
+R2291$Time <- parse_date_time(R2291$Time, orders = "dmyHM")
+R2296$Time <- parse_date_time(R2296$Time, orders = "dmyHM")
+R2342$Time <- parse_date_time(R2342$Time, orders = "dmyHM")
 
 mylist <- list(R1358 = R1358, # make a list of all files
                R1635 = R1635, # specify the name of each dataframe
@@ -23,16 +40,13 @@ mylist <- list(R1358 = R1358, # make a list of all files
                R2296 = R2296,
                R2342 = R2342)
 
-library(plyr)
+
 dst <- ldply(mylist) # ldply converts a list (l) into a dataframe (d)
 colnames(dst) <- c("ID", "Time", "Pressure")
 
-# Change the class of the time variable 
-library(lubridate)
-dst$Time <- parse_date_time(dst$Time, orders = "ymd HMS") # orders = year month day Hour Minute Second
 
 # Add a depth variable
-library(dplyr) 
+
 dst <- filter(dst, !is.na(Pressure)) # remove NA values
 dst$Depth <- -dst$Pressure * 1.0094 # 1.03*10^3 * 9.8*10^-4 # P = Patm + Pfluid = r.g.h
 
@@ -40,8 +54,8 @@ dst$Depth <- -dst$Pressure * 1.0094 # 1.03*10^3 * 9.8*10^-4 # P = Patm + Pfluid 
 dst$ID <- as.factor(dst$ID)
 
 
+
 #### Plotting ####
-library(ggplot2)
 ggplot(data = filter(dst, ID == "R1358")) + theme_bw() + # explore movements of 1 animal
   geom_path(aes(x = Time, y = Depth), size = 0.5)
 
@@ -64,10 +78,8 @@ lapply(sort(unique(date(dst$Time))), function(z){ # explore movements of all ani
 })
 
 #### Interactive plotting ####
-library(plotly)
-
 p <- plot_ly(dst, x = ~Time, y = ~Depth, color = ~ID) %>% # select parts of the plot manually
-  add_lines()
+  add_trace()
 p
 
 p <- plot_ly(dst, x = ~Time, y = ~Depth, color = ~ID) %>% # select parts of the plot in the slider
