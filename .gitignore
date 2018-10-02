@@ -39,3 +39,4 @@ rsconnect/
 # Data files used in this script are confidential
 *.csv
 *.txt
+*.CSV
