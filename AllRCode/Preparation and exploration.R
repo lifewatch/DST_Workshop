@@ -46,8 +46,8 @@ colnames(dst) <- c("ID", "Time", "Pressure")
 
 # Add a depth variable
 
-dst <- filter(dst, !is.na(Pressure)) # remove NA values
-dst$Depth <- -dst$Pressure * 1.0094 # 1.03*10^3 * 9.8*10^-4 # P = Patm + Pfluid = r.g.h
+dst <- filter(dst, !is.na(pressure)) # remove NA values
+#dst$Depth <- -dst$Pressure * 1.0094 # 1.03*10^3 * 9.8*10^-4 # P = Patm + Pfluid = r.g.h #don't need to do this step tags are calibrated for this
 
 # Change the class of the ID variable
 dst$ID <- as.factor(dst$ID)
@@ -91,3 +91,27 @@ p <- plot_ly(dst, x = ~Time, y = ~Depth, color = ~ID) %>% # select parts of the 
       title = "Depth"))
 p
 
+
+
+
+# Tides JAn R
+
+#Load tidal data (when you already know your position)
+# Perform Tidal reduction (Lifewatch E-lab, hopefully in future on EMODNet)
+
+# Load in tidal information 
+tides <- read.csv("AllData/Wandelaar_2017.csv", stringsAsFactors=FALSE)
+
+#adapt dmy to ymd
+tides$DateTime <- parse_date_time(tides$DateTime, orders = "dmyHM")
+
+## Format files to same depth units
+# make depths (dst data) a negative value
+dst$Depth <- -dst$Pressure
+
+# set unit of TAW in meters
+tides$Reduction <- tides$TAW/100
+
+
+# Correct depth with tidal information
+dst_tides$CorrectedDepth <- dst_tides$Depth - dst_tides$Reduction
