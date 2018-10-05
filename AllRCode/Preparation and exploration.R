@@ -123,4 +123,4 @@ dst_tides<-
 
 
 # Correct depth with tidal information
-dst_tides$CorrectedDepth <- dst_tides$Depth - dst_tides$Reduction
+dst_tides$CorrectedDepth <- dst_tides$Depth + dst_tides$Reduction
