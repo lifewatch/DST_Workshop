@@ -111,12 +111,11 @@ dst<-
   dst %>% 
   mutate(DateTime = round_date(DateTime, "10 minutes"))
 
-
-# filter tidal data for min max
+# join with DST data
 DST_tide<-
   left_join(dst, tidal_data, by=c("DateTime"))
 
-# Link tidal data to dst 
+ 
 
 
 
