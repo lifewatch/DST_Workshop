@@ -55,6 +55,10 @@ colnames(dst) <- c("ID", "Time", "Pressure")
 #dst <- filter(dst, !is.na(Pressure)) # remove NA values
 #dst$Depth <- -dst$Pressure * 1.0094 # 1.03*10^3 * 9.8*10^-4 # P = Patm + Pfluid = r.g.h
 
+# Change column name Pressure into Depth
+dst <- rename(dst, Depth = Pressure)
+dst$Depth <- dst$Depth * -1
+
 # Change the class of the ID variable
 dst$ID <- as.factor(dst$ID)
 
