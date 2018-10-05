@@ -92,10 +92,6 @@ p <- plot_ly(dst, x = ~Time, y = ~Depth, color = ~ID) %>% # select parts of the 
 p
 
 
-
-
-# Tides JAn R
-
 #Load tidal data (when you already know your position)
 # Perform Tidal reduction (Lifewatch E-lab, hopefully in future on EMODNet)
 
