@@ -25,12 +25,17 @@ R2342 <- read.csv("AllData/R2342.csv", stringsAsFactors=FALSE)
 
 # Join data in one dataframe
 R1358$Time <- parse_date_time(R1358$Time, orders = "mdyHM") # date is written differently in this file
-R1635$Time <- parse_date_time(R1635$Time, orders = "dmyHM")
-R1642$Time <- parse_date_time(R1642$Time, orders = "dmyHM")
-R2071$Time <- parse_date_time(R2071$Time, orders = "dmyHM")
-R2291$Time <- parse_date_time(R2291$Time, orders = "dmyHM")
-R2296$Time <- parse_date_time(R2296$Time, orders = "dmyHM")
-R2342$Time <- parse_date_time(R2342$Time, orders = "dmyHM")
+R1358$Time <- ymd_hms(R1358$Time)
+R1635$Time <- ymd_hms(R1635$Time)
+R1642$Time <- ymd_hms(R1642$Time)
+R2071$Time <- ymd_hms(R2071$Time)
+R2291$Time <- ymd_hms(R2291$Time)
+R2296$Time <- ymd_hms(R2296$Time)
+R2342$Time <- ymd_hms(R2342$Time)
+
+
+
+
 
 mylist <- list(R1358 = R1358, # make a list of all files
                R1635 = R1635, # specify the name of each dataframe
@@ -45,9 +50,10 @@ dst <- ldply(mylist) # ldply converts a list (l) into a dataframe (d)
 colnames(dst) <- c("ID", "Time", "Pressure")
 
 # Add a depth variable
+# Correction: this correction is already taken into account in the tag itself
 
-dst <- filter(dst, !is.na(Pressure)) # remove NA values
-dst$Depth <- -dst$Pressure * 1.0094 # 1.03*10^3 * 9.8*10^-4 # P = Patm + Pfluid = r.g.h
+#dst <- filter(dst, !is.na(Pressure)) # remove NA values
+#dst$Depth <- -dst$Pressure * 1.0094 # 1.03*10^3 * 9.8*10^-4 # P = Patm + Pfluid = r.g.h
 
 # Change the class of the ID variable
 dst$ID <- as.factor(dst$ID)
