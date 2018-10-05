@@ -27,12 +27,12 @@ R2342 <- read.csv("AllData/R2342.csv", stringsAsFactors=FALSE)
 
 # Join data in one dataframe
 R1358$Time <- parse_date_time(R1358$Time, orders = "mdyHM") # date is written differently in this file
-R1635$Time <- parse_date_time(R1635$Time, orders = "dmyHM")
-R1642$Time <- parse_date_time(R1642$Time, orders = "dmyHM")
-R2071$Time <- parse_date_time(R2071$Time, orders = "dmyHM")
-R2291$Time <- parse_date_time(R2291$Time, orders = "dmyHM")
-R2296$Time <- parse_date_time(R2296$Time, orders = "dmyHM")
-R2342$Time <- parse_date_time(R2342$Time, orders = "dmyHM")
+R1635$Time <- parse_date_time(R1635$Time, orders = "ymdHMS")
+R1642$Time <- parse_date_time(R1642$Time, orders = "ymdHMS")
+R2071$Time <- parse_date_time(R2071$Time, orders = "ymdHMS")
+R2291$Time <- parse_date_time(R2291$Time, orders = "ymdHMS")
+R2296$Time <- parse_date_time(R2296$Time, orders = "ymdHMS")
+R2342$Time <- parse_date_time(R2342$Time, orders = "ymdHMS")
 
 mylist <- list(R1358 = R1358, # make a list of all files
                R1635 = R1635, # specify the name of each dataframe
@@ -44,7 +44,7 @@ mylist <- list(R1358 = R1358, # make a list of all files
 
 
 dst <- ldply(mylist) # ldply converts a list (l) into a dataframe (d)
-colnames(dst) <- c("ID", "Time", "Pressure")
+colnames(dst) <- c("ID", "DateTime", "Pressure")
 
 # Add a depth variable
 
@@ -94,4 +94,29 @@ p <- plot_ly(dst, x = ~Time, y = ~Depth, color = ~ID) %>% # select parts of the 
 p
 
 
-# tidal script
+#### tidal script ####
+# Load tidal data
+tidal_data <- read.csv("AllData/Tidal_data.csv", stringsAsFactors=FALSE)
+
+# set date time
+tidal_data$DateTime <- parse_date_time(tidal_data$DateTime, orders = "dmyHM") # tidal info per 10 min
+
+
+# get min max date time from dst
+min(dst$Time) # "1999-04-07 00:01:00 UTC"
+max(dst$Time) # "2000-02-17 07:41:00 UTC"
+
+# round to closest 10 minutes 
+dst<- 
+  dst %>% 
+  mutate(DateTime = round_date(DateTime, "10 minutes"))
+
+
+# filter tidal data for min max
+DST_tide<-
+  left_join(dst, tidal_data, by=c("DateTime"))
+
+# Link tidal data to dst 
+
+
+
