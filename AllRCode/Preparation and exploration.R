@@ -11,7 +11,7 @@ library(ggplot2)
 library(plotly)
 
 # If a package is not recognized you'll first have to install the package.See example below
-install.packages("plotly")
+#install.packages("plotly")
 
 #### Data preparation ####
 # Load data
