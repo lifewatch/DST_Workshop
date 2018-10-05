@@ -93,3 +93,5 @@ p <- plot_ly(dst, x = ~Time, y = ~Depth, color = ~ID) %>% # select parts of the 
       title = "Depth"))
 p
 
+
+# tidal script
