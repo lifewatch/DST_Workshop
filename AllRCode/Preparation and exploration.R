@@ -47,7 +47,6 @@ colnames(dst) <- c("ID", "Time", "Pressure")
 # Add a depth variable
 
 dst <- filter(dst, !is.na(Pressure)) # remove NA values
-dst$Depth <- -dst$Pressure * 1.0094 # 1.03*10^3 * 9.8*10^-4 # P = Patm + Pfluid = r.g.h
 
 # Change the class of the ID variable
 dst$ID <- as.factor(dst$ID)
