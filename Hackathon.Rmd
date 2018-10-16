@@ -1,0 +1,84 @@
+---
+title: "Data Storage Tag hackathon"
+author: "Flanders Marine Institute: Jolien Goossens, Jan Reubens"
+date: "5 October 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(lubridate)
+library(plyr)
+library(dplyr) 
+library(ggplot2)
+library(plotly)
+```
+
+```{r}
+R1358 <- read.csv("AllData/R1358.csv", stringsAsFactors=FALSE)
+R1635 <- read.csv("AllData/R1635.csv", stringsAsFactors=FALSE)
+R1642 <- read.csv("AllData/R1642.csv", stringsAsFactors=FALSE)
+R2071 <- read.csv("AllData/R2071.csv", stringsAsFactors=FALSE)
+R2291 <- read.csv("AllData/R2291.csv", stringsAsFactors=FALSE)
+R2296 <- read.csv("AllData/R2296.csv", stringsAsFactors=FALSE)
+R2342 <- read.csv("AllData/R2342.csv", stringsAsFactors=FALSE)
+```
+
+```{r}
+R1358$Time <- parse_date_time(R1358$Time, orders = "mdyHM") # date is written differently in this file
+R1635$Time <- parse_date_time(R1635$Time, orders = "dmyHM")
+R1642$Time <- parse_date_time(R1642$Time, orders = "dmyHM")
+R2071$Time <- parse_date_time(R2071$Time, orders = "dmyHM")
+R2291$Time <- parse_date_time(R2291$Time, orders = "dmyHM")
+R2296$Time <- parse_date_time(R2296$Time, orders = "dmyHM")
+R2342$Time <- parse_date_time(R2342$Time, orders = "dmyHM")
+```
+
+```{r}
+mylist <- list(R1358 = R1358, # make a list of all files
+               R1635 = R1635, # specify the name of each dataframe
+               R1642 = R1642,
+               R2071 = R2071,
+               R2291 = R2291,
+               R2296 = R2296,
+               R2342 = R2342)
+```
+
+```{r}
+dst <- ldply(mylist) # ldply converts a list (l) into a dataframe (d)
+colnames(dst) <- c("ID", "Time", "Pressure")
+```
+
+```{r}
+dst <- filter(dst, !is.na(Pressure)) # remove NA values
+dst$ID <- as.factor(dst$ID)
+```
+
+```{r}
+ggplot(data = filter(dst, ID == "R1358")) + theme_bw() + # explore movements of 1 animal
+  geom_path(aes(x = Time, y = Depth), size = 0.5)
+```
+
+```{r}
+ggplot(data = dst) + theme_bw() + # explore movements of all animals
+  geom_path(aes(x = Time, y = Depth), size = 0.5) +
+  facet_grid(ID~.)
+```
+
+```{r}
+lapply(sort(unique(date(dst$Time))), function(z){ # explore movements of all animals per day
+  ggplot(data = dst[date(dst$Time)==z,]) +
+    geom_point(aes(x = Time, y = Depth, colour = ID), size = 0.5) +
+    geom_path(aes(x = Time, y = Depth, colour = ID, group = ID), size = 0.5) +
+    theme_bw() + ylim(max(dst$Depth, na.rm=T)-1, min(dst$Depth, na.rm=T)+1)
+})
+```
+
+```{r}
+
+```
+
