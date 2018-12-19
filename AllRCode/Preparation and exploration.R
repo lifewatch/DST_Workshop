@@ -11,7 +11,7 @@ library(ggplot2)
 library(plotly)
 
 # If a package is not recognized you'll first have to install the package.See example below
-install.packages("plotly")
+#install.packages("plotly")
 
 #### Data preparation ####
 # Load data
@@ -25,12 +25,12 @@ R2342 <- read.csv("AllData/R2342.csv", stringsAsFactors=FALSE)
 
 # Join data in one dataframe
 R1358$Time <- parse_date_time(R1358$Time, orders = "mdyHM") # date is written differently in this file
-R1635$Time <- parse_date_time(R1635$Time, orders = "dmyHM")
-R1642$Time <- parse_date_time(R1642$Time, orders = "dmyHM")
-R2071$Time <- parse_date_time(R2071$Time, orders = "dmyHM")
-R2291$Time <- parse_date_time(R2291$Time, orders = "dmyHM")
-R2296$Time <- parse_date_time(R2296$Time, orders = "dmyHM")
-R2342$Time <- parse_date_time(R2342$Time, orders = "dmyHM")
+R1635$Time <- parse_date_time(R1635$Time, orders = "ymdHMS")
+R1642$Time <- parse_date_time(R1642$Time, orders = "ymdHMS")
+R2071$Time <- parse_date_time(R2071$Time, orders = "ymdHMS")
+R2291$Time <- parse_date_time(R2291$Time, orders = "ymdHMS")
+R2296$Time <- parse_date_time(R2296$Time, orders = "ymdHMS")
+R2342$Time <- parse_date_time(R2342$Time, orders = "ymdHMS")
 
 mylist <- list(R1358 = R1358, # make a list of all files
                R1635 = R1635, # specify the name of each dataframe
@@ -42,11 +42,15 @@ mylist <- list(R1358 = R1358, # make a list of all files
 
 
 dst <- ldply(mylist) # ldply converts a list (l) into a dataframe (d)
-colnames(dst) <- c("ID", "Time", "Pressure")
+colnames(dst) <- c("ID", "DateTime", "Pressure")
 
 # Add a depth variable
 
 dst <- filter(dst, !is.na(Pressure)) # remove NA values
+<<<<<<< HEAD
+=======
+#dst$Depth <- -dst$Pressure * 1.0094 # 1.03*10^3 * 9.8*10^-4 # P = Patm + Pfluid = r.g.h #don't need to do this step tags are calibrated for this
+>>>>>>> 1e3e6092be07e112496e069f916d5c295b99c337
 
 # Change the class of the ID variable
 dst$ID <- as.factor(dst$ID)
@@ -90,3 +94,32 @@ p <- plot_ly(dst, x = ~Time, y = ~Depth, color = ~ID) %>% # select parts of the 
       title = "Depth"))
 p
 
+
+#Load tidal data (when you already know your position)
+# Perform Tidal reduction (Lifewatch E-lab, hopefully in future on EMODNet)
+
+# Load in tidal information 
+tidal_data <- read.csv("AllData/Tidal_data.csv", stringsAsFactors=FALSE)
+
+#adapt dmy to ymd
+tidal_data$DateTime <- parse_date_time(tidal_data$DateTime, orders = "dmyHM")
+
+## Format files to same depth units
+# make depths (dst data) a negative value
+dst$Depth <- -dst$Pressure
+
+# set unit of TAW in meters
+tidal_data$Reduction <- tidal_data$TAW/100
+
+# round to closest 10 minutes 
+dst<- 
+  dst %>% 
+  mutate(DateTime = round_date(DateTime, "10 minutes"))
+
+# join with DST data
+dst_tides<-
+  left_join(dst, tidal_data, by=c("DateTime"))
+
+
+# Correct depth with tidal information
+dst_tides$CorrectedDepth <- dst_tides$Depth + dst_tides$Reduction
