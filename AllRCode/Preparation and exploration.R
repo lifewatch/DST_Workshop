@@ -45,7 +45,6 @@ dst <- ldply(mylist) # ldply converts a list (l) into a dataframe (d)
 colnames(dst) <- c("ID", "DateTime", "Pressure")
 
 # Add a depth variable
-
 dst <- filter(dst, !is.na(Pressure)) # remove NA values
 <<<<<<< HEAD
 =======
@@ -54,7 +53,6 @@ dst <- filter(dst, !is.na(Pressure)) # remove NA values
 
 # Change the class of the ID variable
 dst$ID <- as.factor(dst$ID)
-
 
 
 #### Plotting ####
