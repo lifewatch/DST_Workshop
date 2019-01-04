@@ -25,6 +25,7 @@ R2342 <- read.csv("AllData/R2342.csv", stringsAsFactors=FALSE)
 
 # Join data in one dataframe
 R1358$Time <- parse_date_time(R1358$Time, orders = "mdyHM") # date is written differently in this file
+
 R1358$Time <- ymd_hms(R1358$Time)
 R1635$Time <- ymd_hms(R1635$Time)
 R1642$Time <- ymd_hms(R1642$Time)
@@ -32,9 +33,6 @@ R2071$Time <- ymd_hms(R2071$Time)
 R2291$Time <- ymd_hms(R2291$Time)
 R2296$Time <- ymd_hms(R2296$Time)
 R2342$Time <- ymd_hms(R2342$Time)
-
-
-
 
 
 mylist <- list(R1358 = R1358, # make a list of all files
@@ -47,9 +45,10 @@ mylist <- list(R1358 = R1358, # make a list of all files
 
 
 dst <- ldply(mylist) # ldply converts a list (l) into a dataframe (d)
-colnames(dst) <- c("ID", "Time", "Pressure")
+colnames(dst) <- c("ID", "DateTime", "Pressure")
 
 # Add a depth variable
+
 # Correction: this correction is already taken into account in the tag itself
 
 #dst <- filter(dst, !is.na(Pressure)) # remove NA values
@@ -59,9 +58,11 @@ colnames(dst) <- c("ID", "Time", "Pressure")
 dst <- rename(dst, Depth = Pressure)
 dst$Depth <- dst$Depth * -1
 
+dst <- filter(dst, !is.na(Pressure)) # remove NA values
+
+
 # Change the class of the ID variable
 dst$ID <- as.factor(dst$ID)
-
 
 
 #### Plotting ####
@@ -101,3 +102,32 @@ p <- plot_ly(dst, x = ~Time, y = ~Depth, color = ~ID) %>% # select parts of the 
       title = "Depth"))
 p
 
+
+#Load tidal data (when you already know your position)
+# Perform Tidal reduction (Lifewatch E-lab, hopefully in future on EMODNet)
+
+# Load in tidal information 
+tidal_data <- read.csv("AllData/Tidal_data.csv", stringsAsFactors=FALSE)
+
+#adapt dmy to ymd
+tidal_data$DateTime <- parse_date_time(tidal_data$DateTime, orders = "dmyHM")
+
+## Format files to same depth units
+# make depths (dst data) a negative value
+dst$Depth <- -dst$Pressure
+
+# set unit of TAW in meters
+tidal_data$Reduction <- tidal_data$TAW/100
+
+# round to closest 10 minutes 
+dst<- 
+  dst %>% 
+  mutate(DateTime = round_date(DateTime, "10 minutes"))
+
+# join with DST data
+dst_tides<-
+  left_join(dst, tidal_data, by=c("DateTime"))
+
+
+# Correct depth with tidal information
+dst_tides$CorrectedDepth <- dst_tides$Depth + dst_tides$Reduction
