@@ -1,0 +1,140 @@
+---
+title: "Data Storage Tag hackathon"
+author: "Flanders Marine Institute: Jolien Goossens, Jan Reubens"
+date: "5 October 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This document provides the data preparation for the hackathon of the [Data Storage Tag workshop](http://www.lifewatch.be/sites/lifewatch.be/files/public/Event_docs_public/LifeWatch%20Data%20Storage%20Tag%20workshop.pdf) in October 2018, organized by [LifeWatch Belgium](http://lifewatch.be/). More information can be found on the DST hackathon's [Github repository](https://github.com/lifewatch/DST_Workshop).
+
+*Interested in LifeWatch? Check out some more [tutorials & use cases](http://lifewatch.be/en/tutorials-use-cases-0) and useful [code & packages](https://github.com/topics/lifewatch). Read about the [fish acoustic receiver network](http://lifewatch.be/en/fish-acoustic-receiver-network) to understand how LifeWatch Belgium investigates fish movements.*
+
+## Data preparation
+First, we load the required packages. These will help us to organise our data ('plyr' & 'dplyr'), to manage dates and times ('lubridate') and to produce nice plots ('ggplot2' & 'plotly').
+```{r message = F}
+library(lubridate)
+library(plyr)
+library(dplyr) 
+library(ggplot2)
+library(plotly)
+```
+
+If necessary, you can install a package with the code below. *(or you can go to Packages >> Install)*
+```{r eval = FALSE}
+install.packages("plotly")
+```
+
+Next, we read the data of 7 DST. These files contain the depth histories of 7 Atlantic cod, *Gadus morhua*, tagged in the "Hurdy Gurdy" site in the Southern Bight of the North Sea. The data are owned by [Cefas](https://www.cefas.co.uk/).
+```{r}
+R1358 <- read.csv("AllData/R1358.csv", stringsAsFactors=FALSE)
+R1635 <- read.csv("AllData/R1635.csv", stringsAsFactors=FALSE)
+R1642 <- read.csv("AllData/R1642.csv", stringsAsFactors=FALSE)
+R2071 <- read.csv("AllData/R2071.csv", stringsAsFactors=FALSE)
+R2291 <- read.csv("AllData/R2291.csv", stringsAsFactors=FALSE)
+R2296 <- read.csv("AllData/R2296.csv", stringsAsFactors=FALSE)
+R2342 <- read.csv("AllData/R2342.csv", stringsAsFactors=FALSE)
+```
+
+The *Time* variable is now considered to contain character values. The **parse_date_time()** function of the 'lubridate' package converts these values to POSIXct. Take care to correctly specify the *orders* argument correctly!
+```{r}
+R1358$Time <- parse_date_time(R1358$Time, orders = "mdyHM") # date is written differently in this file
+R1635$Time <- parse_date_time(R1635$Time, orders = "ymdHMS")
+R1642$Time <- parse_date_time(R1642$Time, orders = "ymdHMS")
+R2071$Time <- parse_date_time(R2071$Time, orders = "ymdHMS")
+R2291$Time <- parse_date_time(R2291$Time, orders = "ymdHMS")
+R2296$Time <- parse_date_time(R2296$Time, orders = "ymdHMS")
+R2342$Time <- parse_date_time(R2342$Time, orders = "ymdHMS")
+```
+
+There are different ways to assemble these 7 data frames in one. Here, we chose to first make a list of the different data frames. In this list, we specify the name of each of the data frames.
+```{r}
+mylist <- list(R1358 = R1358, # make a list of all files
+               R1635 = R1635, # specify the name of each dataframe
+               R1642 = R1642,
+               R2071 = R2071,
+               R2291 = R2291,
+               R2296 = R2296,
+               R2342 = R2342)
+```
+
+Next, we use **ldply()** to convert a list (l) into a dataframe (d). We change the names of the columns with the **colnames()** function.
+```{r}
+dst <- ldply(mylist)
+colnames(dst) <- c("ID", "Time", "Pressure")
+```
+
+Some minor adjustments remain: we **filter()** out NA values and we regard ID as a factor.
+```{r}
+dst <- filter(dst, !is.na(Pressure)) # remove NA values
+dst$ID <- as.factor(dst$ID)
+```
+
+For visualisation purposes, we create a new variable *Depth* as the negative of *Pressure*.
+```{r}
+dst$Depth <- -dst$Pressure
+```
+*Note: The given pressure values are not the raw pressure measurements. Previous calibration already accounted for temperature and latitude differences.*
+
+## Plotting
+Now we can start exploring these data. First off, we plot the depth history of a single fish. 
+```{r}
+ggplot(data = filter(dst, ID == "R1358")) + # explore movements of 1 animal: R1358
+  theme_bw() + # black and white theme
+  geom_path(aes(x = Time, y = Depth), size = 0.5) # draw a path between the different measured depths
+```
+
+This overview plot nicely shows the release and recapture of the fish, as well as a distinct tidal cycle.
+
+By facetting the data, we can explore the movements of all the animals.
+```{r}
+ggplot(data = dst) + theme_bw() + 
+  geom_path(aes(x = Time, y = Depth), size = 0.5) +
+  facet_grid(ID~.) # draw a path between depth measurements for all fish
+```
+
+Here we notice differences in activity. In the first half of May, most fish seem to have been quite inactive with a strong association to the seabed, after which activity and excursions in the water column seem to increase for most fish.
+
+To explore these vertical movements patterns at a smaller resolution, we can plot these movements for each date seperately. To achieve this, we make a list of plots.
+```{r eval =FALSE}
+lapply( # apply a function to a list
+  sort(unique(date(dst$Time))), # specify your list: chronologically ordered dates
+       function(z){ # specify the function you apply to each element of this list z
+  ggplot(data = dst[date(dst$Time)==z,]) + # make a plot of the data, subsetted for each date z
+    geom_point(aes(x = Time, y = Depth, colour = ID), size = 0.5) + # add a point for each depth measurement
+    geom_path(aes(x = Time, y = Depth, colour = ID, group = ID), size = 0.5) + # draw a path between depth measurements for all fish, the group argument distinguishes different IDs
+    theme_bw() + ylim(max(dst$Depth, na.rm=T)-1, min(dst$Depth, na.rm=T)+1) # set the  limit of the y-axis (depth)
+})
+```
+
+## Interactive plotting
+The sheer number of data require an exploration of these data at different scales. Interactive plotting simplifies this exploration. The 'plotly' package provides relatively intuitive coding options for interactive plots. You can learn more about the numerous possibilities of this packages in the [Plotly R Open Source Graphing Library](https://plot.ly/r/).
+```{r}
+p <- plot_ly(dst, x = ~Time, y = ~Depth, color = ~ID) %>% # select parts of the plot manually
+  add_lines()
+p
+```
+
+In this plot we can select or deselect certain fish and zoom in to specific time and depth ranges.
+
+Another option is to add a [slider](https://plot.ly/r/range-slider/) for the time variable.
+```{r}
+p <- plot_ly(dst, x = ~Time, y = ~Depth, color = ~ID) %>% # select parts of the plot in the slider
+  add_lines() %>%
+  layout(
+    title = "DST",
+    xaxis = list(
+      rangeslider = list(type = "date")),
+    yaxis = list(
+      title = "Depth"))
+p
+```
+
+## Going further
+After this first exploration, different groups investigated distinct aspects of the data. One group investigated where to get and how to link tidal data to the archival depth histories. Another group looked at geolocation approaches and whether existing R packages ([HMMoce](https://cran.rstudio.com/web/packages/HMMoce/index.html)) could serve to infer the trajectories of tagged fish. A third group wanted to get familiar with R before going into in-depth analysis.
+
+#### Contact
+Any questions? Contact [info@lifewatch.be](info@lifewatch.be) or visit the [LifeWatch website](http://lifewatch.be/).
