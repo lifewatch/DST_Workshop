@@ -10,6 +10,8 @@ library(dplyr)
 library(ggplot2)
 library(plotly)
 
+setwd("E:/Ivdrknaa/OneDrive - UGent/WE11C435/Ivdrknaa/Documents/Workshops/DST oostende")
+
 # If a package is not recognized you'll first have to install the package.See example below
 #install.packages("plotly")
 
@@ -26,14 +28,12 @@ R2342 <- read.csv("AllData/R2342.csv", stringsAsFactors=FALSE)
 # Join data in one dataframe
 R1358$Time <- parse_date_time(R1358$Time, orders = "mdyHM") # date is written differently in this file
 
-R1358$Time <- ymd_hms(R1358$Time)
-R1635$Time <- ymd_hms(R1635$Time)
-R1642$Time <- ymd_hms(R1642$Time)
-R2071$Time <- ymd_hms(R2071$Time)
-R2291$Time <- ymd_hms(R2291$Time)
-R2296$Time <- ymd_hms(R2296$Time)
-R2342$Time <- ymd_hms(R2342$Time)
-
+R1635$Time <- parse_date_time(R1635$Time, orders = "ymdHMS")
+R1642$Time <- parse_date_time(R1642$Time, orders = "ymdHMS")
+R2071$Time <- parse_date_time(R2071$Time, orders = "ymdHMS")
+R2291$Time <- parse_date_time(R2291$Time, orders = "ymdHMS")
+R2296$Time <- parse_date_time(R2296$Time, orders = "ymdHMS")
+R2342$Time <- parse_date_time(R2342$Time, orders = "ymdHMS")
 
 mylist <- list(R1358 = R1358, # make a list of all files
                R1635 = R1635, # specify the name of each dataframe
@@ -59,7 +59,6 @@ dst <- rename(dst, Depth = Pressure)
 dst$Depth <- dst$Depth * -1
 
 dst <- filter(dst, !is.na(Pressure)) # remove NA values
-
 
 # Change the class of the ID variable
 dst$ID <- as.factor(dst$ID)
@@ -103,6 +102,19 @@ p <- plot_ly(dst, x = ~Time, y = ~Depth, color = ~ID) %>% # select parts of the 
 p
 
 
+
+#### tidal script ####
+# Load tidal data
+tidal_data <- read.csv("AllData/Tidal_data.csv", stringsAsFactors=FALSE)
+
+# set date time
+tidal_data$DateTime <- parse_date_time(tidal_data$DateTime, orders = "dmyHM") # tidal info per 10 min
+
+
+# get min max date time from dst
+min(dst$Time) # "1999-04-07 00:01:00 UTC"
+max(dst$Time) # "2000-02-17 07:41:00 UTC"
+
 #Load tidal data (when you already know your position)
 # Perform Tidal reduction (Lifewatch E-lab, hopefully in future on EMODNet)
 
@@ -119,6 +131,7 @@ dst$Depth <- -dst$Pressure
 # set unit of TAW in meters
 tidal_data$Reduction <- tidal_data$TAW/100
 
+
 # round to closest 10 minutes 
 dst<- 
   dst %>% 
@@ -131,3 +144,4 @@ dst_tides<-
 
 # Correct depth with tidal information
 dst_tides$CorrectedDepth <- dst_tides$Depth + dst_tides$Reduction
+
